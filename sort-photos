@@ -15,23 +15,6 @@ import sys
 # find originals/ -name ".*" -type f -delete
 # identify -format "%[EXIF:DateTimeOriginal]"
 
-def is_hidden(file):
-    base, ext = os.path.splitext(file)
-    return base.startswith('.')# or not ext or len(ext) > 6
-
-def file_exts(path):
-    counts = {}
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            base, ext = os.path.splitext(file)
-            if is_hidden(file):
-                ext = 'hidden'
-            if ext in counts:
-                counts[ext] += 1
-            else:
-                counts[ext] = 1
-    print(counts)
-
 def sort(src, dst):
     for root, dirs, files in os.walk(src):
         for file in files:
@@ -54,12 +37,6 @@ def sort(src, dst):
                 print(f'{path} -> {dstpath}')
                 os.makedirs(dir, exist_ok=True)
                 os.rename(path, dstpath)
-
-
-
-print(sys.argv)
-# if (sys.argv[1]):
-#     file_exts(sys.argv[1])
 
 if (sys.argv[1] and sys.argv[2]):
     sort(sys.argv[1], sys.argv[2])
