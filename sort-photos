@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+#
+# Created on 2021-12-09 to sort photos based on exif date time original.
+# Photos are sorted from argv[1] into argv[2]/yyyy/mm/dd/
+#
+# Example use:
+#     ./sort-photos ~/Pictures/originals/ ~/Dropbox/Photos/
+#
+import os
+import shlex
+import subprocess
+import sys
+
+# To delete hidden files:
+# find originals/ -name ".*" -type f -delete
+# identify -format "%[EXIF:DateTimeOriginal]"
+
+def is_hidden(file):
+    base, ext = os.path.splitext(file)
+    return base.startswith('.')# or not ext or len(ext) > 6
+
+def file_exts(path):
+    counts = {}
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            base, ext = os.path.splitext(file)
+            if is_hidden(file):
+                ext = 'hidden'
+            if ext in counts:
+                counts[ext] += 1
+            else:
+                counts[ext] = 1
+    print(counts)
+
+def sort(src, dst):
+    for root, dirs, files in os.walk(src):
+        for file in files:
+            base, ext = os.path.splitext(file)
+            path = os.path.join(root, file)
+            # print(path)
+            if '.jpeg' == ext:
+                # print(ext)
+                cmdpath = shlex.quote(path)
+                cmd = f'identify -format "%[EXIF:DateTimeOriginal]" {cmdpath}'
+                # print(cmd)
+                date = subprocess.check_output(cmd, shell=True, text=True)
+                if not date or len(date) < 10:
+                    print(f'Error Date: {path} (date)')
+                    continue
+                datepath = date[0:10].replace(':', '/')
+                prefix = date.replace(':', '-').replace(' ', '_')
+                dir = os.path.join(dst, datepath)
+                dstpath = os.path.join(dir, f'{prefix}-{file}')
+                print(f'{path} -> {dstpath}')
+                os.makedirs(dir, exist_ok=True)
+                os.rename(path, dstpath)
+
+
+
+print(sys.argv)
+# if (sys.argv[1]):
+#     file_exts(sys.argv[1])
+
+if (sys.argv[1] and sys.argv[2]):
+    sort(sys.argv[1], sys.argv[2])
