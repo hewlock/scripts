@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+#
+# Created on 2021-12-11 to sort movies based on file name. Movies were exported with filename:
+#   yyyy-mm-dd_hh-mm-ss.mov
+#   IMG-1234.mov
+#
+# Movies are sorted from argv[1] into argv[2]/yyyy/mm/dd/
+#
+# Example use:
+#     ./sort-movies ~/Pictures/Movies/ ~/Dropbox/Photos/
+
+from dateutil.parser import parse
+import os
+import sys
+
+def sort(src, dst):
+    for root, dirs, files in os.walk(src):
+        for file in files:
+            base, ext = os.path.splitext(file)
+            parent = os.path.split(root)[1]
+
+            parent_parts = parent.split(',')
+            date = parent_parts[-2:]
+            date = ','.join(date).strip()
+            loc = ','.join(parent_parts[0:-2]).strip().replace(u'\xa0', u' ')
+            if len(loc):
+                loc = ' ' + loc
+            filename = f'{base}{loc}{ext}'
+            if not file.startswith('20'):
+                iso = str(parse(date)).replace(' ', '_').replace(':', '-')
+                filename = f'{iso}{loc} ({base}){ext}'
+
+            iso_path = filename[0:10].split('-')
+            src_path = os.path.join(root, file)
+            dst_dir = os.path.join(dst, '/'.join(iso_path))
+            dst_path = os.path.join(dst_dir, filename)
+            print(f'{src_path} -> {dst_path}')
+            os.makedirs(dst_dir, exist_ok=True)
+            os.rename(src_path, dst_path)
+            #sys.exit(0)
+
+if (len(sys.argv) == 3 and sys.argv[1] and sys.argv[2]):
+    sort(sys.argv[1], sys.argv[2])
